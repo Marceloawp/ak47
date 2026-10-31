@@ -1,0 +1,44 @@
+name: Compilar mod
+
+on:
+  push:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Baixar MDK do Forge 1.21.1
+        run: |
+          curl -L -f -o mdk.zip https://maven.minecraftforge.net/net/minecraftforge/forge/1.21.1-52.1.0/forge-1.21.1-52.1.0-mdk.zip
+          mkdir mdk
+          unzip -q mdk.zip -d mdk
+
+      - name: Montar o projeto
+        run: |
+          cd mdk
+          rm -rf src/main/java/*
+          cp -r ../src/* src/
+          sed -i 's/^mod_id *=.*/mod_id=ak47mod/' gradle.properties
+          sed -i 's/^mod_name *=.*/mod_name=AK-47 TNT/' gradle.properties
+          sed -i 's/^mod_group_id *=.*/mod_group_id=com.voidsterror.ak47/' gradle.properties
+          sed -i 's/^mod_version *=.*/mod_version=1.0/' gradle.properties
+
+      - name: Compilar
+        run: |
+          cd mdk
+          chmod +x gradlew
+          ./gradlew build
+
+      - name: Guardar o .jar
+        uses: actions/upload-artifact@v4
+        with:
+          name: ak47mod-jar
+          path: mdk/build/libs/*.jar
